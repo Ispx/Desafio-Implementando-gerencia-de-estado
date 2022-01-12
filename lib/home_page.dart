@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import 'models/home_controller.dart';
 import 'screens/done_screen.dart';
 import 'screens/task_screen.dart';
 import 'shared/models/todo_item.dart';
+import 'builder_widget.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -10,61 +12,18 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final _toDoItemList = <ToDoItem>[];
-  final _doneItemList = <ToDoItem>[];
-
-  final _pageViewController = PageController(
-    initialPage: 0,
-    keepPage: true,
-  );
-
-  var _selectedIndex = 0;
-
-  void onAddItem(String itemTitle) {
-    setState(() {
-      _toDoItemList.add(
-        ToDoItem(
-          title: itemTitle,
-        ),
-      );
-    });
-  }
-
-  void onResetItem(ToDoItem item) {
-    setState(() {
-      _doneItemList.remove(item);
-
-      _toDoItemList.add(
-        ToDoItem(
-          title: item.title,
-        ),
-      );
-    });
-  }
-
-  void onRemoveToDoItem(ToDoItem item) {
-    setState(() {
-      _toDoItemList.remove(item);
-    });
-  }
-
-  void onRemoveDoneItem(ToDoItem item) {
-    setState(() {
-      _doneItemList.remove(item);
-    });
-  }
-
-  void onCompleteItem(ToDoItem item) {
-    setState(() {
-      _toDoItemList.remove(item);
-
-      _doneItemList.add(
-        ToDoItem(
-          title: item.title,
-          isDone: true,
-        ),
-      );
-    });
+  late HomeController controller;
+  late PageController _pageViewController;
+  late int _selectedIndex;
+  @override
+  void initState() {
+    controller = HomeController([]);
+    _pageViewController = PageController(
+      initialPage: 0,
+      keepPage: true,
+    );
+    _selectedIndex = 0;
+    super.initState();
   }
 
   @override
@@ -80,16 +39,19 @@ class _HomePageState extends State<HomePage> {
       body: PageView(
         controller: _pageViewController,
         children: <Widget>[
-          TaskScreen(
-            itemList: _toDoItemList,
-            onAddItem: onAddItem,
-            onCompleteItem: onCompleteItem,
-            onRemoveItem: onRemoveToDoItem,
+          BuilderWidget<List<ToDoItem>>(
+            controller: controller,
+            builder: (context, state) => TaskScreen(
+              itemList: state,
+              onAddItem: controller.onAddItem,
+              onCompleteItem: controller.onCompleteItem,
+              onRemoveItem: controller.onRemoveToDoItem,
+            ),
           ),
           DoneScreen(
-            itemList: _doneItemList,
-            onRemoveItem: onRemoveDoneItem,
-            onResetItem: onResetItem,
+            itemList: controller.doneItemList,
+            onRemoveItem: controller.onRemoveDoneItem,
+            onResetItem: controller.onResetItem,
           ),
         ],
         onPageChanged: (index) {
@@ -100,7 +62,6 @@ class _HomePageState extends State<HomePage> {
         currentIndex: _selectedIndex,
         onTap: (index) {
           setState(() => _selectedIndex = index);
-
           _pageViewController.animateToPage(
             _selectedIndex,
             duration: Duration(milliseconds: 350),
